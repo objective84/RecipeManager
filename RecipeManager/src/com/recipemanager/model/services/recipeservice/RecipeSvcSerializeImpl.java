@@ -10,6 +10,8 @@ import javax.swing.filechooser.FileSystemView;
 import com.recipemanager.model.domain.Ingredient;
 import com.recipemanager.model.domain.RMObject;
 import com.recipemanager.model.domain.Recipe;
+import com.recipemanager.model.services.exceptions.IdAlreadyExistsException;
+import com.recipemanager.model.services.exceptions.RecipeNotFoundException;
 
 
 
@@ -69,12 +71,17 @@ public class RecipeSvcSerializeImpl implements IRecipeSvc {
 	}
 	
 	@Override
-	public void create(RMObject obj) {
-		if(find(((Recipe)obj).getId()) == null){
+	public void create(RMObject obj) throws IdAlreadyExistsException{
+		try{
+			find(((Recipe)obj).getId());
+			}
+		catch(RecipeNotFoundException ex){
 			List<Recipe> list = getRecipeList();
 			list.add((Recipe)obj);
 			writeToFile(list);
-		}
+		} 
+		
+		throw new IdAlreadyExistsException();
 	}
 
 	@Override
@@ -91,14 +98,14 @@ public class RecipeSvcSerializeImpl implements IRecipeSvc {
 	}
 
 	@Override
-	public RMObject find(int id) {
+	public RMObject find(int id) throws RecipeNotFoundException{
 		List<Recipe> list = getRecipeList();
 		for(Recipe recipe : list){
 			if(recipe.getId() == id) {
 				return recipe;
 			}
 		}
-		return null;
+		throw new RecipeNotFoundException();
 	}
 
 	@Override
@@ -115,44 +122,80 @@ public class RecipeSvcSerializeImpl implements IRecipeSvc {
 
 	@Override
 	public void addIngredient(Recipe recipe, Ingredient ingredient) {
-		Recipe add = (Recipe)find(recipe.getId());
-		add.addIngredient(ingredient);
-		edit(add);
+		Recipe add;
+		try {
+			add = (Recipe)find(recipe.getId());
+			add.addIngredient(ingredient);
+			edit(add);
+		} catch (RecipeNotFoundException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
 	public void removeIngredient(Recipe recipe, Ingredient ingredient) {
-		Recipe remove = (Recipe)find(recipe.getId());
-		remove.removeIngredient(ingredient);
-		edit(remove);		
+		Recipe remove;
+		try {
+			remove = (Recipe)find(recipe.getId());
+			remove.removeIngredient(ingredient);
+			edit(remove);	
+		} catch (RecipeNotFoundException e) {
+			e.printStackTrace();
+		}	
 	}
 
 	@Override
 	public List<Ingredient> getIngredients(Recipe recipe) {
-		Recipe get = (Recipe)find(recipe.getId());
-		return get.getIngredients();
+		Recipe get;
+		try {
+			get = (Recipe)find(recipe.getId());
+			return get.getIngredients();
+		} catch (RecipeNotFoundException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	@Override
 	public void addSide(Recipe recipe, Recipe side) {
-		Recipe add = (Recipe)find(recipe.getId());
-		add.addSide(side);
-		edit(add);
+		Recipe add;
+		try {
+			add = (Recipe)find(recipe.getId());
+			add.addSide(side);
+			edit(add);
+		} catch (RecipeNotFoundException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
 	public void removeSide(Recipe recipe, Recipe side) {
-		Recipe remove = (Recipe)find(recipe.getId());
-		remove.removeSide(side);
-		edit(remove);		
+		Recipe remove;
+		try {
+			remove = (Recipe)find(recipe.getId());
+			remove.removeSide(side);
+			edit(remove);		
+		} catch (RecipeNotFoundException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
-	public List<Recipe> getSides(Recipe recipe) {
-		Recipe get = (Recipe)find(recipe.getId());
+	public List<Recipe> getSides(Recipe recipe){
+		Recipe get = null;
+		try {
+			get = (Recipe)find(recipe.getId());
+		} catch (RecipeNotFoundException e) {
+			e.printStackTrace();
+		}
 		List<Recipe> sides = new ArrayList();
 		for(int side : get.getSides()){
-			sides.add((Recipe)find(side));
+			try {
+				sides.add((Recipe)find(side));
+			} catch (RecipeNotFoundException e) {
+				
+				removeSide(recipe, new Recipe(side));
+			}
 		}
 		return sides;
 	}

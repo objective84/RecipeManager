@@ -10,11 +10,10 @@ public class SerializeFactory extends Factory {
 	@Override
 	public IService getService(ServiceType type) {
 		switch(type){
-		case Recipe:
+		case IRecipeService:
 			return new RecipeSvcSerializeImpl();
 		default:
 			return null;
 		}
 	}
-
 }

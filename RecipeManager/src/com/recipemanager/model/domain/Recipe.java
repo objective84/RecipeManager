@@ -20,6 +20,10 @@ public class Recipe extends RMObject implements Serializable{
 		
 	}
 	
+	public Recipe(int id){
+		this.id = id;
+	}
+	
 	public Recipe(int id, int userId, String name, int servings, int calories, 
 			boolean sideDish, List<Ingredient> ingredients, String instructions, List<Integer> sides){
 		this.id = id;

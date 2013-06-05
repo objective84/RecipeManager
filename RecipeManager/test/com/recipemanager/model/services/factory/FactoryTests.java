@@ -1,5 +1,6 @@
 package com.recipemanager.model.services.factory;
 
+import com.recipemanager.model.buisiness.exception.ServiceLoadFailException;
 import com.recipemanager.model.services.ServiceType;
 import com.recipemanager.model.services.factory.Factory;
 import com.recipemanager.model.services.factory.SerializeFactory;
@@ -18,7 +19,7 @@ public class FactoryTests extends TestCase {
 
 	protected void setUp() throws Exception {
 		super.setUp();
-		factory = new SerializeFactory();
+		factory = new Factory();
 	}
 
 	protected void tearDown() throws Exception {
@@ -26,7 +27,13 @@ public class FactoryTests extends TestCase {
 	}
 
 	public void testGetService_Recipe() {
-		RecipeSvcSerializeImpl actual = (RecipeSvcSerializeImpl) factory.getService(ServiceType.Recipe);		
+		RecipeSvcSerializeImpl actual = null;
+		try {
+			actual = (RecipeSvcSerializeImpl) factory.getService(ServiceType.IRecipeService);
+		} catch (ServiceLoadFailException e) {
+			fail();
+			
+		}		
 		assertNotNull(actual);
 	}
 }

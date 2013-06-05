@@ -22,6 +22,8 @@ import com.recipemanager.model.domain.Ingredient;
 import com.recipemanager.model.domain.Measurements;
 import com.recipemanager.model.domain.Recipe;
 import com.recipemanager.model.services.ServiceType;
+import com.recipemanager.model.services.exceptions.IdAlreadyExistsException;
+import com.recipemanager.model.services.exceptions.RecipeNotFoundException;
 import com.recipemanager.model.services.factory.Factory;
 import com.recipemanager.model.services.factory.SerializeFactory;
 import com.recipemanager.model.services.recipeservice.RecipeSvcSerializeImpl;
@@ -39,12 +41,14 @@ public class RecipeSvcSerializeImplTest {
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
+		
 	}
+	
 
 	@Before
 	public void setUp() throws Exception {
-		factory = new SerializeFactory();
-		svc = (RecipeSvcSerializeImpl)factory.getService(ServiceType.Recipe);
+		factory = new Factory();
+		svc = (RecipeSvcSerializeImpl)factory.getService(ServiceType.IRecipeService);
 		List list = new ArrayList<Ingredient>();
 		list.add(new Ingredient(.5, Measurements.tsp, "Sugar"));
 		list.add(new Ingredient(1, Measurements.c, "Flour"));
@@ -59,16 +63,33 @@ public class RecipeSvcSerializeImplTest {
 
 	@Test
 	public void testCreate() {
-		svc.create(testRecipe);
-		Recipe actual = (Recipe) svc.find(testRecipe.getId());
+		try {
+			svc.create(testRecipe);
+		} catch (IdAlreadyExistsException e) {
+			System.out.println("Recipe ID already exists");
+			fail();
+		}
+		Recipe actual = null;
+		List<Recipe> list = svc.getRecipeList();
+		for(Recipe recipe : list){
+			if(recipe.getId() == testRecipe.getId()) {
+				actual = recipe;
+			}
 		assertNotNull(actual);
+		}
 	}
 	
 	@Test
 	public void testFind(){
 		addTestRecipe();
-		Recipe actual = (Recipe) svc.find(testRecipe.getId());
+		Recipe actual = null;
+		try {
+			actual = (Recipe) svc.find(testRecipe.getId());
+		} catch (RecipeNotFoundException e) {
+			fail();
+		}
 		assertEquals(testRecipe, actual);
+		
 	}
 	
 	@Test
@@ -217,17 +238,39 @@ public class RecipeSvcSerializeImplTest {
 			}
 		}
 		List<Recipe> actual = svc.getSides(testRecipe);
-		list = svc.getRecipeList();
-		for(Recipe recipe: list){
-			if(recipe.getId() == side.getId()){
-				list.remove(recipe);
-				break;
-			}
-		}
-		svc.writeToFile(list);
 		assertEquals(expected, actual);
 		
+		deleteRecipe(side);
 		
+	}
+	
+	@Test
+	public void removeDeletedSideFromRecipe_Pass(){
+		Recipe side = new Recipe(2, 1, "Test Side", 4, 100, true, null, "", null);
+		List<Recipe> list = svc.getRecipeList();
+		testRecipe.addSide(side);
+		list.add(side);
+		try{
+		      OutputStream out = new FileOutputStream(svc.getPath() + "recipes.dat");
+		      OutputStream buffer = new BufferedOutputStream( out );
+		      ObjectOutput output = new ObjectOutputStream( buffer );
+		      try{
+		        output.writeObject(list);
+		      }
+		      finally{
+		        output.close();
+		      }
+		    }  
+		    catch(IOException ex){
+		      ex.printStackTrace();
+		    }
+		addTestRecipe();
+		deleteRecipe(side);
+				
+		int expected = 0;
+		int actual = svc.getSides(testRecipe).size();
+		
+		assertEquals(expected, actual);
 	}
 	
 	private void addTestRecipe(){
@@ -254,6 +297,17 @@ public class RecipeSvcSerializeImplTest {
 		for(Recipe recipe: list){
 			if(recipe.getId() == testRecipe.getId()){
 				list.remove(recipe);
+				break;
+			}
+		}
+		svc.writeToFile(list);
+	}
+	
+	private void deleteRecipe(Recipe recipe){
+		List<Recipe> list = svc.getRecipeList();
+		for(Recipe r: list){
+			if(recipe.getId() == recipe.getId()){
+				list.remove(r);
 				break;
 			}
 		}

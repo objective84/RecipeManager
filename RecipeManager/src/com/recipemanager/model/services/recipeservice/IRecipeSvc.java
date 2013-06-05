@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.recipemanager.model.domain.*;
 import com.recipemanager.model.services.IDataSvc;
+import com.recipemanager.model.services.exceptions.RecipeNotFoundException;
 
 public interface IRecipeSvc extends IDataSvc{
 
